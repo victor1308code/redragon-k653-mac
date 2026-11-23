@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redragon K653 Control</title>
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --surface: #12161f;
+      --surface-2: #181d29;
+      --surface-3: #202738;
+      --border: #262e42;
+      --text: #f1f5ff;
+      --muted: #93a1be;
+      --accent: #ff1e3c;
+      --accent-soft: rgba(255, 30, 60, 0.16);
+      --cyan: #24d2e5;
+      --green: #38d399;
+      --amber: #f5b942;
+      --red: #ff5468;
+      --radius: 16px;
+      --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255, 30, 60, 0.14), transparent 36%),
+        radial-gradient(circle at 88% 10%, rgba(36, 210, 229, 0.08), transparent 36%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 24px 36px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1.15fr auto auto;
+      align-items: center;
+      gap: 18px;
+      background: rgba(18, 22, 31, 0.92);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 20px;
+      position: sticky;
+      top: 12px;
+      z-index: 30;
+    }
+
+    @media (max-width: 880px) {
+      .topbar { grid-template-columns: 1fr; }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255, 30, 60, 0.22), rgba(255, 30, 60, 0.06));
+      border: 1px solid rgba(255, 30, 60, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #ff4760;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      width: fit-content;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--muted);
+    }
+    .badge.ok { border-color: rgba(56, 211, 153, 0.45); color: var(--green); background: rgba(56, 211, 153, 0.12); }
+    .badge.warn { border-color: rgba(245, 185, 66, 0.45); color: var(--amber); background: rgba(245, 185, 66, 0.12); }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Prominent Battery Hero */
+    .battery-hero {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 16px;
+      min-width: 260px;
+    }
+
+    .battery-shell {
+      position: relative;
+      width: 48px;
+      height: 24px;
+      border: 2px solid #8a99b8;
+      border-radius: 6px;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .battery-shell::after {
+      content: "";
+      position: absolute;
+      right: -6px;
+      top: 5px;
+      width: 4px;
+      height: 10px;
+      background: #8a99b8;
+      border-radius: 0 3px 3px 0;
+    }
+    .battery-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: 3px;
+      background: var(--green);
+      transition: width 0.35s ease, background-color 0.35s ease;
+    }
+    .battery-fill.med { background: var(--amber); }
+    .battery-fill.low { background: var(--red); }
+    .battery-fill.neutral { background: #4f6387; }
+
+    .battery-info { display: flex; flex-direction: column; gap: 2px; }
+    .battery-pct { font-size: 20px; font-weight: 800; line-height: 1.1; }
+    .battery-sub { font-size: 12px; color: var(--muted); }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.16s ease;
+    }
+    button:hover { border-color: #3d4a69; background: var(--surface-3); }
+    button.primary {
+      background: linear-gradient(135deg, #ff1e3c, #d91130);
+      border-color: rgba(255, 60, 90, 0.65);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(255, 30, 60, 0.28);
+    }
+    button.primary:hover { filter: brightness(1.08); }
+
+    .banner {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .banner.info { border-color: rgba(245, 185, 66, 0.35); background: rgba(245, 185, 66, 0.08); color: #f8d889; }
+    .banner.ok { border-color: rgba(56, 211, 153, 0.35); background: rgba(56, 211, 153, 0.08); color: #9cf0cf; }
+
+    /* Visual Keyboard Hero */
+    .kb-card {
+      margin-top: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 20px;
+    }
+
+    .kb-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .kb-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+    .kb-sub { font-size: 12px; color: var(--muted); }
+
+    .kb-stage-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      aspect-ratio: 639 / 265;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0d1017;
+      border: 1px solid #262e42;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+    }
+
+    .kb-stage-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      opacity: 0.92;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .kb-overlay {
+      position: absolute;
+      inset: 0;
+    }
+
+    .key-cap {
+      position: absolute;
+      border-radius: 5px;
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      background: rgba(15, 18, 28, 0.36);
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .key-cap:hover {
+      transform: scale(1.06);
+      z-index: 4;
+      border-color: #ffffff;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      justify-content: center;
+    }
+    .preset-btn {
+      padding: 7px 12px;
+      font-size: 12px;
+      border-radius: 10px;
+    }
+
+    /* Controls Grid */
+    .grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .card h3 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .mode-pill {
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 11px;
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: #d6e0f5;
+    }
+    .mode-pill.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(255, 30, 60, 0.35);
+    }
+
+    .control-row {
+      margin-bottom: 16px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .control-val {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .seg-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .seg-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .swatches {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      cursor: pointer;
+      transition: transform 0.14s ease, border-color 0.14s ease;
+    }
+    .swatch:hover { transform: scale(1.1); }
+    .swatch.active { border-color: #ffffff; box-shadow: 0 0 0 2px var(--accent); }
+
+    .color-picker-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .color-picker-wrap input[type="color"] {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      display: inline-block;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #2c354c;
+      border-radius: 999px;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .switch input:checked + .slider { background: var(--accent); }
+    .switch input:checked + .slider::before { transform: translateX(18px); }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #171d2c;
+      border: 1px solid #35415e;
+      color: #f3f7ff;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 60;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">K653</div>
+        <div class="brand-meta">
+          <div class="brand-title">Redragon K653-RGB-PRO</div>
+          <div id="connBadge" class="badge"><span class="dot"></span><span id="connText">Procurando teclado...</span></div>
+        </div>
+      </div>
+
+      <div class="battery-hero">
+        <div class="battery-shell">
+          <div id="batFill" class="battery-fill neutral" style="width: 100%"></div>
+        </div>
+        <div class="battery-info">
+          <div id="batPct" class="battery-pct">—</div>
+          <div id="batSub" class="battery-sub">Verificando bateria...</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btnReset">Restaurar Padrão</button>
+        <button id="btnApply" class="primary">Aplicar no Teclado</button>
+      </div>
+    </header>
+
+    <div id="statusBanner" class="banner" style="display:none;">
+      <span id="bannerText"></span>
+    </div>
+
+    <section class="kb-card">
+      <div class="kb-head">
+        <div>
+          <h2>Mapa Visual do Teclado</h2>
+          <div id="kbHint" class="kb-sub">Clique em qualquer tecla para pintar sua cor no modo Personalizado por Tecla.</div>
+        </div>
+        <div class="color-picker-wrap">
+          <span>Cor do pincel:</span>
+          <input type="color" id="brushColor" value="#ff1e3c" />
+        </div>
+      </div>
+
+      <div class="kb-stage-wrap">
+        <img src="/assets/keyimg.png" alt="Redragon K653-RGB-PRO" />
+        <div id="kbOverlay" class="kb-overlay"></div>
+      </div>
+
+      <div class="preset-row">
+        <button class="preset-btn" data-preset="wasd">Destaque WASD + Setas</button>
+        <button class="preset-btn" data-preset="red">Tudo Vermelho Redragon</button>
+        <button class="preset-btn" data-preset="cyan">Tudo Ciano Gelado</button>
+        <button class="preset-btn" data-preset="rainbow">Gradiente Arco-Íris</button>
+        <button class="preset-btn" data-preset="clear">Apagar Todas as Teclas</button>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h3>Efeitos de Iluminação RGB</h3>
+        <div id="modeGrid" class="mode-grid"></div>
+      </section>
+
+      <section class="card">
+        <h3>Ajustes do Efeito e Perfil</h3>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Perfil do Teclado</span>
+            <span id="profVal" class="control-val">Perfil 1</span>
+          </div>
+          <div class="seg-row" id="profileSegs">
+            <button class="seg-btn" data-profile="1">Perfil 1</button>
+            <button class="seg-btn" data-profile="2">Perfil 2</button>
+            <button class="seg-btn" data-profile="3">Perfil 3</button>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Brilho dos LEDs</span>
+            <span id="brightVal" class="control-val">100%</span>
+          </div>
+          <input type="range" id="brightSlider" min="0" max="4" step="1" value="4" />
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Velocidade da Animação</span>
+            <span id="speedVal" class="control-val">Nível 4</span>
+          </div>
+          <input type="range" id="speedSlider" min="0" max="4" step="1" value="3" />
+        </div>
+
+        <div class="toggle-line">
+          <span>Modo Colorido Automático (RGB)</span>
+          <label class="switch">
+            <input type="checkbox" id="colorfulToggle" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-line">
+          <span>Inverter Direção do Efeito</span>
+          <label class="switch">
+            <input type="checkbox" id="dirToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="control-row" style="margin-top: 14px;">
+          <div class="control-label">
+            <span>Cor Principal do Efeito</span>
+            <span id="colorLabel" class="control-val">#ff1e3c</span>
+          </div>
+          <div class="swatches" id="swatchRow"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const STATE = {
+      config: null,
+      led_modes: [],
+      keys: [],
+      wired_connected: false,
+      dirty: false,
+      applyTimer: null,
+    };
+
+    const BRIGHT_PCT = ["0%", "25%", "50%", "75%", "100%"];
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(t._tm);
+      t._tm = setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...opts,
+      });
+      return res.json();
+    }
+
+    function renderBattery(data) {
+      const bat = (data.telemetry && data.telemetry.battery) || {};
+      const pctEl = document.getElementById("batPct");
+      const subEl = document.getElementById("batSub");
+      const fillEl = document.getElementById("batFill");
+      const badge = document.getElementById("connBadge");
+      const connText = document.getElementById("connText");
+      const banner = document.getElementById("statusBanner");
+      const bannerText = document.getElementById("bannerText");
+
+      fillEl.className = "battery-fill";
+      if (typeof bat.percent === "number") {
+        pctEl.textContent = `${bat.percent}%` + (bat.charging ? " ⚡" : "");
+        fillEl.style.width = `${Math.max(6, bat.percent)}%`;
+        if (bat.percent <= 20) fillEl.classList.add("low");
+        else if (bat.percent <= 50) fillEl.classList.add("med");
+      } else if (bat.mode === "wired") {
+        pctEl.textContent = "Cabo ⚡";
+        fillEl.style.width = "100%";
+      } else if (bat.mode === "24g") {
+        pctEl.textContent = "2.4G";
+        fillEl.style.width = "70%";
+        fillEl.classList.add("neutral");
+      } else {
+        pctEl.textContent = "Offline";
+        fillEl.style.width = "10%";
+        fillEl.classList.add("neutral");
+      }
+      subEl.textContent = bat.label || "Aguardando teclado";
+
+      badge.className = "badge";
+      if (data.wired_connected) {
+        badge.classList.add("ok");
+        connText.textContent = "Conectado via Cabo USB-C";
+      } else if (bat.mode === "bluetooth") {
+        badge.classList.add("ok");
+        connText.textContent = "Conectado via Bluetooth";
+      } else if (bat.mode === "24g") {
+        badge.classList.add("warn");
+        connText.textContent = "Conectado via 2.4G";
+      } else {
+        connText.textContent = "Teclado desconectado";
+      }
+
+      if (!data.wired_connected && (bat.mode === "24g" || bat.mode === "bluetooth")) {
+        banner.style.display = "flex";
+        banner.className = "banner info";
+        bannerText.textContent =
+          bat.mode === "24g"
+            ? "Teclado conectado no modo 2.4G. Suas alterações ficam salvas e serão gravadas automaticamente assim que você plugar o cabo USB-C."
+            : "Teclado conectado via Bluetooth (bateria ao vivo). Para gravar novos efeitos RGB no teclado, plugue o cabo USB-C.";
+      } else if (data.last_sync && data.last_sync.hardware_synced) {
+        banner.style.display = "flex";
+        banner.className = "banner ok";
+        bannerText.textContent = data.last_sync.message || "Configurações sincronizadas no teclado.";
+      } else if (data.pending_sync && data.last_sync && data.last_sync.message) {
+        banner.style.display = "flex";
+        banner.className = "banner info";
+        bannerText.textContent = data.last_sync.message;
+      } else {
+        banner.style.display = "none";
+      }
+    }
+
+    function renderKeyboardMap() {
+      const overlay = document.getElementById("kbOverlay");
+      overlay.innerHTML = "";
+      const cfg = STATE.config;
+      const customColors = (cfg && cfg.custom_key_colors) || {};
+      const isCustom = cfg && cfg.led_mode === "custom";
+      const mainHex = (cfg && cfg.color_hex) || "#ff1e3c";
+
+      for (const k of STATE.keys) {
+        const div = document.createElement("div");
+        div.className = "key-cap";
+        div.title = k.label;
+        div.style.left = `${(k.x1 / 639) * 100}%`;
+        div.style.top = `${(k.y1 / 265) * 100}%`;
+        div.style.width = `${((k.x2 - k.x1) / 639) * 100}%`;
+        div.style.height = `${((k.y2 - k.y1) / 265) * 100}%`;
+
+        const keyHex = isCustom ? (customColors[k.id] || "#000000") : (cfg && cfg.colorful ? "" : mainHex);
+        if (keyHex && keyHex !== "#000000" && cfg.led_mode !== "off") {
+          div.style.borderColor = keyHex;
+          div.style.boxShadow = `inset 0 0 10px ${keyHex}66, 0 0 8px ${keyHex}44`;
+        } else if (cfg && cfg.led_mode === "off") {
+          div.style.borderColor = "rgba(255,255,255,0.08)";
+          div.style.boxShadow = "none";
+        } else {
+          const hue = Math.round((k.x1 / 639) * 320);
+          div.style.borderColor = `hsla(${hue}, 95%, 60%, 0.72)`;
+          div.style.boxShadow = `inset 0 0 8px hsla(${hue}, 95%, 60%, 0.25)`;
+        }
+
+        div.addEventListener("click", () => {
+          const brush = document.getElementById("brushColor").value;
+          STATE.config.led_mode = "custom";
+          STATE.config.custom_key_colors = STATE.config.custom_key_colors || {};
+          STATE.config.custom_key_colors[k.id] = brush;
+          renderAllControls();
+          if (STATE.wired_connected) {
+            api("/api/live-rgb", {
+              method: "POST",
+              body: JSON.stringify({ custom_key_colors: { [k.id]: brush } }),
+            });
+          }
+          scheduleApply();
+        });
+        overlay.appendChild(div);
+      }
+    }
+
+    function renderModes() {
+      const grid = document.getElementById("modeGrid");
+      grid.innerHTML = "";
+      for (const m of STATE.led_modes) {
+        const btn = document.createElement("button");
+        btn.className = "mode-pill" + (STATE.config.led_mode === m.id ? " active" : "");
+        btn.textContent = m.name;
+        btn.addEventListener("click", () => {
+          STATE.config.led_mode = m.id;
+          renderAllControls();
+          scheduleApply();
+        });
+        grid.appendChild(btn);
+      }
+    }
+
+    function renderSwatches() {
+      const row = document.getElementById("swatchRow");
+      row.innerHTML = "";
+      const palette = STATE.config.palette || [];
+      palette.forEach((hex, idx) => {
+        const sw = document.createElement("div");
+        sw.className = "swatch" + (!STATE.config.colorful && STATE.config.color_index === idx ? " active" : "");
+        sw.style.background = hex;
+        sw.title = hex;
+        sw.addEventListener("click", () => {
+          STATE.config.colorful = false;
+          STATE.config.color_index = idx;
+          STATE.config.color_hex = hex;
+          renderAllControls();
+          scheduleApply();
+        });
+        row.appendChild(sw);
+      });
+
+      const pickerWrap = document.createElement("label");
+      pickerWrap.className = "color-picker-wrap";
+      pickerWrap.innerHTML = `<span>Livre</span><input type="color" value="${STATE.config.color_hex || "#ff1e3c"}" />`;
+      const inp = pickerWrap.querySelector("input");
+      inp.addEventListener("change", () => {
+        STATE.config.colorful = false;
+        STATE.config.color_hex = inp.value;
+        STATE.config.palette[STATE.config.color_index || 0] = inp.value;
+        renderAllControls();
+        scheduleApply();
+      });
+      row.appendChild(pickerWrap);
+    }
+
+    function renderAllControls() {
+      const cfg = STATE.config;
+      if (!cfg) return;
+
+      document.getElementById("profVal").textContent = `Perfil ${cfg.profile_id}`;
+      document.querySelectorAll("#profileSegs .seg-btn").forEach((b) => {
+        b.classList.toggle("active", Number(b.dataset.profile) === Number(cfg.profile_id));
+      });
+
+      document.getElementById("brightSlider").value = cfg.brightness;
+      document.getElementById("brightVal").textContent = BRIGHT_PCT[cfg.brightness] || "100%";
+
+      document.getElementById("speedSlider").value = cfg.speed;
+      document.getElementById("speedVal").textContent = `Nível ${Number(cfg.speed) + 1}`;
+
+      document.getElementById("colorfulToggle").checked = Boolean(cfg.colorful);
+      document.getElementById("dirToggle").checked = Boolean(cfg.direction);
+      document.getElementById("colorLabel").textContent = cfg.colorful ? "Arco-Íris Automático" : (cfg.color_hex || "#ff1e3c");
+
+      renderModes();
+      renderSwatches();
+      renderKeyboardMap();
+    }
+
+    function scheduleApply() {
+      STATE.dirty = true;
+      clearTimeout(STATE.applyTimer);
+      STATE.applyTimer = setTimeout(() => applyNow(true), 260);
+    }
+
+    async function applyNow(silent = false) {
+      const data = await api("/api/apply", {
+        method: "POST",
+        body: JSON.stringify({ config: STATE.config }),
+      });
+      STATE.dirty = false;
+      STATE.wired_connected = Boolean(data.wired_connected);
+      STATE.config = data.config;
+      renderBattery(data);
+      renderAllControls();
+      if (!silent || (data.apply_result && data.apply_result.message)) {
+        showToast((data.apply_result && data.apply_result.message) || "Configurações salvas.");
+      }
+    }
+
+    async function pollStatus(initial = false) {
+      try {
+        const data = await api("/api/status");
+        STATE.wired_connected = Boolean(data.wired_connected);
+        if (initial || !STATE.config) {
+          STATE.led_modes = data.led_modes || [];
+          STATE.keys = data.keys || [];
+          STATE.config = data.config;
+          renderAllControls();
+        }
+        renderBattery(data);
+      } catch (e) {}
+    }
+
+    // Wire events
+    document.querySelectorAll("#profileSegs .seg-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const targetProfile = Number(btn.dataset.profile);
+        clearTimeout(STATE.applyTimer);
+        const data = await api("/api/apply", {
+          method: "POST",
+          body: JSON.stringify({ config: { profile_id: targetProfile, switch_profile: true } }),
+        });
+        STATE.dirty = false;
+        STATE.wired_connected = Boolean(data.wired_connected);
+        STATE.config = data.config;
+        renderBattery(data);
+        renderAllControls();
+        if (data.apply_result && data.apply_result.message) {
+          showToast(`Perfil ${targetProfile} ativado`);
+        }
+      });
+    });
+
+    document.getElementById("brightSlider").addEventListener("input", (e) => {
+      STATE.config.brightness = Number(e.target.value);
+      document.getElementById("brightVal").textContent = BRIGHT_PCT[STATE.config.brightness];
+      scheduleApply();
+    });
+
+    document.getElementById("speedSlider").addEventListener("input", (e) => {
+      STATE.config.speed = Number(e.target.value);
+      document.getElementById("speedVal").textContent = `Nível ${STATE.config.speed + 1}`;
+      scheduleApply();
+    });
+
+    document.getElementById("colorfulToggle").addEventListener("change", (e) => {
+      STATE.config.colorful = e.target.checked;
+      renderAllControls();
+      scheduleApply();
+    });
+
+    document.getElementById("dirToggle").addEventListener("change", (e) => {
+      STATE.config.direction = e.target.checked ? 1 : 0;
+      renderAllControls();
+      scheduleApply();
+    });
+
+    document.getElementById("btnApply").addEventListener("click", () => applyNow(false));
+
+    document.getElementById("btnReset").addEventListener("click", async () => {
+      const data = await api("/api/reset", { method: "POST", body: "{}" });
+      STATE.config = data.config;
+      renderBattery(data);
+      renderAllControls();
+      showToast("Configurações padrão restauradas.");
+    });
+
+    document.querySelectorAll(".preset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const p = btn.dataset.preset;
+        STATE.config.led_mode = "custom";
+        const map = {};
+        const wasd = new Set(["W", "A", "S", "D", "Up", "Down", "Left", "Right", "Esc"]);
+        for (const k of STATE.keys) {
+          if (p === "wasd") map[k.id] = wasd.has(k.label) ? "#ff1e3c" : "#00e5ff";
+          else if (p === "red") map[k.id] = "#ff1e3c";
+          else if (p === "cyan") map[k.id] = "#00e5ff";
+          else if (p === "clear") map[k.id] = "#000000";
+          else if (p === "rainbow") {
+            const colors = ["#ff1e3c", "#ff7a00", "#ffd500", "#00e676", "#00e5ff", "#2979ff", "#d500f9"];
+            const idx = Math.min(colors.length - 1, Math.floor((k.x1 / 639) * colors.length));
+            map[k.id] = colors[idx];
+          }
+        }
+        STATE.config.custom_key_colors = map;
+        renderAllControls();
+        scheduleApply();
+      });
+    });
+
+    pollStatus(true);
+    setInterval(() => pollStatus(false), 3000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# macOS compiled app bundle (built locally via build_macos_app.py)
+Redragon K653 Control.app/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# macOS & logs
+.DS_Store
+*.log
+/tmp/
